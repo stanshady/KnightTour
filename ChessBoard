@@ -1,0 +1,219 @@
+package KnightsTour;
+
+import javafx.scene.layout.Pane;
+import javafx.scene.paint.Color;
+
+import java.util.ArrayList;
+
+public class ChessBoard extends Pane {
+
+    private final double TILE_WIDTH;
+    private final double TILE_HEIGHT;
+    private ChessTile[][] board;
+    private boolean solved;
+
+    ChessBoard(double tileWidth, double tileHeight) {
+        TILE_WIDTH = tileWidth;
+        TILE_HEIGHT = tileHeight;
+
+        //+50 for boarders
+        setPrefSize(8 * TILE_WIDTH + 50, 8 * TILE_HEIGHT + 50);
+        board = new ChessTile[8][8];
+        solved = false;
+
+        for (int row = 0; row < 8; row++) {
+            for (int col = 0; col < 8; col++) {
+                ChessTile tile = new ChessTile(TILE_HEIGHT, TILE_WIDTH, row, col, this);
+
+                //notice X*col and Y*row
+                tile.setTranslateX(col * TILE_WIDTH + 25);
+                tile.setTranslateY(row * TILE_HEIGHT);
+
+                //add checkerboard pattern
+                if ((row + col) % 2 == 1) {
+                    tile.setBackground(Color.TAN);
+                } else
+                    tile.setBackground(Color.WHITESMOKE);
+
+                board[row][col] = tile;
+                getChildren().addAll(tile);
+            }
+        }
+    }
+
+    /*
+    * Attempt at classic (backtrack?) recursive technique:
+    * goes to a square and checks @param available
+    * If all tries fail, then go back one layer/square.
+    * See SudokuBoard.fillSudoku() for details
+    * Works like shit for this problem
+     */
+    public void solveTour(int row, int col, ArrayList<int[]> available, int move){
+        //Basecase
+        if(move > 63){
+            solved = true;
+            return;
+        }
+
+        //Special additional step if move == 1
+        //We need to populate available
+        if(move == 1)
+            available = makeAvailable(row,col);
+
+        //General case
+        for(int i = 0; i < available.size(); i++){
+
+            //Set the square with the move number
+            board[row][col].setText(String.valueOf(move));
+
+            //Try a square from available
+            int[] tempPair = available.get(i);
+
+            solveTour(tempPair[0],tempPair[1],makeAvailable(tempPair[0],tempPair[1]), move + 1);
+            //We are here if all available attempts failed or it is solved
+
+            if(solved)
+                return;
+            board[row][col].setText("");
+        }
+
+        //We are here because it is NOT solved but all attempts failed
+        //Set the text to "", go back a layer and try again.
+        board[row][col].setText("");
+        return;
+    }
+
+    /*
+    * solveTourRandom() brute forces random tries
+     */
+     public int tryTourRandom(int row, int col){
+
+        int move = 1;
+        while(move < 65){
+            board[row][col].setText(String.valueOf(move));
+
+            if(move == 64)
+                return move;
+
+            ArrayList<int[]> available = makeAvailable(row, col);
+            if(available.size() == 0) {
+                return move;
+            }
+
+            int[] rand = available.get((int)(Math.random()*available.size()));
+            row = rand[0];
+            col = rand[1];
+            move++;
+        }
+
+        return move;
+
+    }
+
+    /*
+    * solveTourRandom() runs tryTourRandom until we get lucky
+     */
+    public void solveTourRandom(int row, int col){
+        int iter = 1;
+        int lastMove = tryTourRandom(row,col);
+
+        while(lastMove < 64) {
+
+            System.out.println("Iter: " + iter + " move: " + lastMove);
+            clearAll();
+            lastMove = tryTourRandom(row, col);
+            iter++;
+        }
+    }
+
+    private boolean isInBounds(int row, int col) {
+        return row > -1 && row < 8 && col > -1 && col < 8;
+    }
+
+    /*
+     * Returns an ArrayList of (row,col) pairs that are
+     * "available": both inbounds and not landed on yet
+     */
+    public ArrayList<int[]> makeAvailable(int row, int col) {
+        // First get all inbounds
+        ArrayList<int[]> available = makeInBounds(row, col);
+
+        // Now check if they have been landed on
+        for (int i = 0; i < available.size(); i++) {
+            int tempRow = available.get(i)[0];
+            int tempCol = available.get(i)[1];
+            if (!board[tempRow][tempCol].getText().equals("")) {
+                available.remove(i);
+                i--;
+            }
+        }
+        return available;
+    }
+
+    /*
+     * Returns an ArrayList of (row,col) pairs that are inbounds
+     */
+    public ArrayList<int[]> makeInBounds(int row, int col) {
+        ArrayList<int[]> inBounds = new ArrayList<>();
+        //Check all 8 knight moves
+        if (isInBounds(row + 2, col + 1))
+            inBounds.add(new int[]{row + 2, col + 1});
+        if (isInBounds(row + 2, col - 1))
+            inBounds.add(new int[]{row + 2, col - 1});
+        if (isInBounds(row + 1, col + 2))
+            inBounds.add(new int[]{row + 1, col + 2});
+        if (isInBounds(row + 1, col - 2))
+            inBounds.add(new int[]{row + 1, col - 2});
+        if (isInBounds(row - 2, col + 1))
+            inBounds.add(new int[]{row - 2, col + 1});
+        if (isInBounds(row - 2, col - 1))
+            inBounds.add(new int[]{row - 2, col - 1});
+        if (isInBounds(row - 1, col + 2))
+            inBounds.add(new int[]{row - 1, col + 2});
+        if (isInBounds(row - 1, col - 2))
+            inBounds.add(new int[]{row - 1, col - 2});
+
+        return inBounds;
+    }
+
+    public void clearSelected() {
+        for (ChessTile[] row : board) {
+            for (ChessTile tile : row) {
+                tile.resetSelected();
+            }
+        }
+    }
+
+    /*
+    * findSelected() is used by the solve button
+    * returns {-1,-1} if non-found
+     */
+    public int[] findSelected(){
+        for(ChessTile[] row: board){
+            for(ChessTile tile: row)
+                if(tile.isSelected()){
+                    int tempRow = tile.getRow();
+                    int tempCol = tile.getCol();
+                    return new int[] {tempRow, tempCol};
+                }
+
+        }
+        return new int[]{-1,-1};
+    }
+
+    /*
+    *   clearAll() clears the chessboard tiles of any text
+     */
+    public void clearAll(){
+       for(ChessTile[] row: board)
+           for(ChessTile tile: row){
+               tile.setText("");
+               tile.resetSelected();
+           }
+    }
+
+    @Override
+    public void setPrefSize(double prefWidth, double prefHeight) {
+        super.setPrefSize(prefWidth, prefHeight);
+    }
+}
