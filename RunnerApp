@@ -1,6 +1,8 @@
 package KnightsTour;
 
 
+import javafx.animation.KeyFrame;
+import javafx.animation.Timeline;
 import javafx.application.Application;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
@@ -8,6 +10,7 @@ import javafx.scene.control.Button;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
 import javafx.stage.Stage;
+import javafx.util.Duration;
 
 
 public class RunnerApp extends Application {
@@ -15,6 +18,9 @@ public class RunnerApp extends Application {
     private Pane root;
     private Button clearButton, solveButton;
     private ChessBoard chessBoard;
+    private Timeline timer;
+    //move is used to add arrows
+    private int move;
     private final double TILE_WIDTH = 80;
     private final double TILE_HEIGHT = 80;
 
@@ -29,8 +35,14 @@ public class RunnerApp extends Application {
         //Has to come after addAll(chessBoard)
         setUpButtons();
 
+
         return root;
     }
+
+    private void animateArrows() {
+
+    }
+
 
     private void setUpButtons() {
         clearButton = new Button();
@@ -54,7 +66,24 @@ public class RunnerApp extends Application {
             int tempRow = chessBoard.findSelected()[0];
             int tempCol = chessBoard.findSelected()[1];
             chessBoard.solveTourRandom(tempRow, tempCol);
+            move = 1;
+            setUpTimer(500);
         });
+    }
+
+    private void setUpTimer(int speed) {
+        timer = new Timeline(new KeyFrame(Duration.millis(speed), event -> {
+
+            if(move >= 64)
+                event.consume();
+            else {
+                chessBoard.connectSquares(move);
+                move++;
+            }
+
+        }));
+        timer.setCycleCount(Timeline.INDEFINITE);
+        timer.play();
     }
 
 
