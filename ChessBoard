@@ -43,6 +43,62 @@ public class ChessBoard extends Pane {
         }
     }
 
+    /*
+     * fillArrows() adds arrow connecting consecutive
+     * moves on the board.
+     */
+
+    public void fillArrows() {
+
+        for(int move = 1; move < 64; move++){
+            connectSquares(move);
+        }
+
+    }
+
+
+    /*
+    * connectSquares(int move) connects chessTiles move
+    * and move+1 with an arrow
+     */
+
+    public void connectSquares(int move){
+        int startRow = findTile(move)[0];
+        int startCol = findTile(move)[1];
+        int endRow = findTile(move+1)[0];
+        int endCol = findTile(move+1)[1];
+
+        drawArrow(startRow,startCol,endRow,endCol);
+    }
+
+    /*
+     * findTile() returns the row and col of the ChessTile
+     * with move on it.  Used with makeArrow() to
+     * find start and end tiles to draw arrows.
+     */
+    private int[] findTile(int move) {
+        for (int i = 0; i < 8; i++)
+            for (int j = 0; j < 8; j++)
+                if (dataBoard[i][j] == move)
+                    return new int[]{i, j};
+
+        return new int[]{-1, -1};
+    }
+
+    /*
+     * makeArrow() adds an arrow to root from start to end
+     */
+    public void drawArrow(int startRow, int startCol, int endRow, int endCol) {
+        double startX = board[startRow][startCol].getTranslateX() + TILE_WIDTH / 2.0;
+        double startY = board[startRow][startCol].getTranslateY() + TILE_HEIGHT / 2.0;
+        double endX = board[endRow][endCol].getTranslateX() + TILE_WIDTH / 2.0;
+        double endY = board[endRow][endCol].getTranslateY() + TILE_HEIGHT / 2.0;
+
+
+        Arrow arrow = new Arrow(startX, startY, endX, endY);
+        getChildren().addAll(arrow);
+    }
+
 
     /*
      * solveTourRandom() brute forces random tries
@@ -84,8 +140,8 @@ public class ChessBoard extends Pane {
             lastMove = tryTourRandom(row, col);
             iter++;
         }
-        clearAll();
-        copyData();
+        //clearAll();
+        //copyData();
 
     }
 
