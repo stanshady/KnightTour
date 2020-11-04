@@ -10,6 +10,7 @@ public class ChessBoard extends Pane {
     private final double TILE_WIDTH;
     private final double TILE_HEIGHT;
     private ChessTile[][] board;
+    private int[][] dataBoard;
     private boolean solved;
 
     ChessBoard(double tileWidth, double tileHeight) {
@@ -19,6 +20,7 @@ public class ChessBoard extends Pane {
         //+50 for boarders
         setPrefSize(8 * TILE_WIDTH + 50, 8 * TILE_HEIGHT + 50);
         board = new ChessTile[8][8];
+        dataBoard = new int[8][8];
         solved = false;
 
         for (int row = 0; row < 8; row++) {
@@ -41,66 +43,24 @@ public class ChessBoard extends Pane {
         }
     }
 
-    /*
-    * Attempt at classic (backtrack?) recursive technique:
-    * goes to a square and checks @param available
-    * If all tries fail, then go back one layer/square.
-    * See SudokuBoard.fillSudoku() for details
-    * Works like shit for this problem
-     */
-    public void solveTour(int row, int col, ArrayList<int[]> available, int move){
-        //Basecase
-        if(move > 63){
-            solved = true;
-            return;
-        }
-
-        //Special additional step if move == 1
-        //We need to populate available
-        if(move == 1)
-            available = makeAvailable(row,col);
-
-        //General case
-        for(int i = 0; i < available.size(); i++){
-
-            //Set the square with the move number
-            board[row][col].setText(String.valueOf(move));
-
-            //Try a square from available
-            int[] tempPair = available.get(i);
-
-            solveTour(tempPair[0],tempPair[1],makeAvailable(tempPair[0],tempPair[1]), move + 1);
-            //We are here if all available attempts failed or it is solved
-
-            if(solved)
-                return;
-            board[row][col].setText("");
-        }
-
-        //We are here because it is NOT solved but all attempts failed
-        //Set the text to "", go back a layer and try again.
-        board[row][col].setText("");
-        return;
-    }
 
     /*
-    * solveTourRandom() brute forces random tries
+     * solveTourRandom() brute forces random tries
      */
-     public int tryTourRandom(int row, int col){
+    public int tryTourRandom(int row, int col) {
 
         int move = 1;
-        while(move < 65){
-            board[row][col].setText(String.valueOf(move));
-
-            if(move == 64)
+        while (move < 65) {
+            dataBoard[row][col] = move;
+            if (move == 64)
                 return move;
 
             ArrayList<int[]> available = makeAvailable(row, col);
-            if(available.size() == 0) {
+            if (available.size() == 0) {
                 return move;
             }
 
-            int[] rand = available.get((int)(Math.random()*available.size()));
+            int[] rand = available.get((int) (Math.random() * available.size()));
             row = rand[0];
             col = rand[1];
             move++;
@@ -110,25 +70,37 @@ public class ChessBoard extends Pane {
 
     }
 
+
     /*
-    * solveTourRandom() runs tryTourRandom until we get lucky
+     * solveTourRandom() runs tryTourRandom until we get lucky
      */
-    public void solveTourRandom(int row, int col){
+    public void solveTourRandom(int row, int col) {
         int iter = 1;
-        int lastMove = tryTourRandom(row,col);
+        int lastMove = tryTourRandom(row, col);
 
-        while(lastMove < 64) {
-
+        while (lastMove < 64) {
+            dataBoard = new int[8][8];
             System.out.println("Iter: " + iter + " move: " + lastMove);
-            clearAll();
             lastMove = tryTourRandom(row, col);
             iter++;
+        }
+        clearAll();
+        copyData();
+
+    }
+
+    private void copyData() {
+        for (int i = 0; i < 8; i++) {
+            for (int j = 0; j < 8; j++) {
+                board[i][j].setText(String.valueOf(dataBoard[i][j]));
+            }
         }
     }
 
     private boolean isInBounds(int row, int col) {
         return row > -1 && row < 8 && col > -1 && col < 8;
     }
+
 
     /*
      * Returns an ArrayList of (row,col) pairs that are
@@ -142,7 +114,7 @@ public class ChessBoard extends Pane {
         for (int i = 0; i < available.size(); i++) {
             int tempRow = available.get(i)[0];
             int tempCol = available.get(i)[1];
-            if (!board[tempRow][tempCol].getText().equals("")) {
+            if (dataBoard[tempRow][tempCol] != 0) {
                 available.remove(i);
                 i--;
             }
@@ -176,6 +148,7 @@ public class ChessBoard extends Pane {
         return inBounds;
     }
 
+
     public void clearSelected() {
         for (ChessTile[] row : board) {
             for (ChessTile tile : row) {
@@ -185,32 +158,76 @@ public class ChessBoard extends Pane {
     }
 
     /*
-    * findSelected() is used by the solve button
-    * returns {-1,-1} if non-found
+     * findSelected() is used by the solve button
+     * returns {-1,-1} if non-found
      */
-    public int[] findSelected(){
-        for(ChessTile[] row: board){
-            for(ChessTile tile: row)
-                if(tile.isSelected()){
+    public int[] findSelected() {
+        for (ChessTile[] row : board) {
+            for (ChessTile tile : row)
+                if (tile.isSelected()) {
                     int tempRow = tile.getRow();
                     int tempCol = tile.getCol();
-                    return new int[] {tempRow, tempCol};
+                    return new int[]{tempRow, tempCol};
                 }
 
         }
-        return new int[]{-1,-1};
+        return new int[]{-1, -1};
     }
 
     /*
-    *   clearAll() clears the chessboard tiles of any text
+     *   clearAll() clears the chessboard tiles of any text
      */
-    public void clearAll(){
-       for(ChessTile[] row: board)
-           for(ChessTile tile: row){
-               tile.setText("");
-               tile.resetSelected();
-           }
+    public void clearAll() {
+        for (ChessTile[] row : board)
+            for (ChessTile tile : row) {
+                tile.setText("");
+                tile.resetSelected();
+            }
     }
+
+
+    /*
+     * Attempt at classic (backtrack?) recursive technique:
+     * goes to a square and checks @param available
+     * If all tries fail, then go back one layer/square.
+     * See SudokuBoard.fillSudoku() for details
+     * Works like shit for this problem
+     */
+    public void solveTour(int row, int col, ArrayList<int[]> available, int move) {
+        //Basecase
+        if (move > 63) {
+            solved = true;
+            return;
+        }
+
+        //Special additional step if move == 1
+        //We need to populate available
+        if (move == 1)
+            available = makeAvailable(row, col);
+
+        //General case
+        for (int i = 0; i < available.size(); i++) {
+
+            //Set the square with the move number
+            board[row][col].setText(String.valueOf(move));
+
+            //Try a square from available
+            int[] tempPair = available.get(i);
+
+            solveTour(tempPair[0], tempPair[1], makeAvailable(tempPair[0], tempPair[1]), move + 1);
+            //We are here if all available attempts failed or it is solved
+
+            if (solved)
+                return;
+            board[row][col].setText("");
+        }
+
+        //We are here because it is NOT solved but all attempts failed
+        //Set the text to "", go back a layer and try again.
+        board[row][col].setText("");
+        return;
+    }
+
 
     @Override
     public void setPrefSize(double prefWidth, double prefHeight) {
