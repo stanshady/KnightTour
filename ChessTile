@@ -1,0 +1,100 @@
+package KnightsTour;
+
+import javafx.geometry.Insets;
+import javafx.scene.layout.Background;
+import javafx.scene.layout.BackgroundFill;
+import javafx.scene.layout.CornerRadii;
+import javafx.scene.layout.StackPane;
+import javafx.scene.paint.Color;
+import javafx.scene.shape.Circle;
+import javafx.scene.shape.Rectangle;
+import javafx.scene.text.Font;
+import javafx.scene.text.Text;
+
+public class ChessTile extends StackPane {
+    private final double WIDTH;
+    private final double HEIGHT;
+    private final int row, col;
+    private boolean selected;
+    //circleSelect used as marker for selected square
+    private Circle circleSelect;
+    private Rectangle boarder;
+    //text will store the digit to be displayed
+    private Text text;
+
+    ChessTile(double width, double height, int row, int col, ChessBoard chessBoard) {
+        WIDTH = width;
+        HEIGHT = height;
+        this.row = row;
+        this.col = col;
+        text = new Text("");
+        text.setFont(Font.font(30));
+        selected = false;
+
+        setUpBoader();
+        setUpCircle();
+
+        //handle events from mouse clicks:
+        setOnMouseClicked(event -> {
+            //if(selected) then do nothing
+            if (!selected) {
+                chessBoard.clearSelected();
+                circleSelect.setOpacity(1);
+                selected = true;
+            }
+        });
+
+        getChildren().addAll(boarder, text, circleSelect);
+    }
+
+
+    private void setUpBoader() {
+        //boarder also sets the size of the StackPane
+        //since it will be the largest child
+        boarder = new Rectangle(getTranslateX(), getTranslateY(), WIDTH, HEIGHT);
+
+        //setting Fill to null and then Stroke to BLACK
+        //displays only the boarder of the Rectangle
+        boarder.setFill(null);
+        boarder.setStrokeWidth(1);
+        boarder.setStroke(Color.BLACK);
+    }
+
+    private void setUpCircle() {
+        circleSelect = new Circle(WIDTH / 8);
+        circleSelect.setOpacity(0);
+    }
+
+    public void setBackground(Color color) {
+        BackgroundFill background_fill = new BackgroundFill(color,
+                CornerRadii.EMPTY, Insets.EMPTY);
+        Background background = new Background(background_fill);
+        setBackground(background);
+    }
+
+
+    public boolean isSelected() {
+        return selected;
+    }
+
+    public void resetSelected() {
+        selected = false;
+        circleSelect.setOpacity(0);
+    }
+
+    public String getText() {
+        return text.getText();
+    }
+
+    public void setText(String str) {
+        text.setText(str);
+    }
+
+    public int getRow() {
+        return row;
+    }
+
+    public int getCol() {
+        return col;
+    }
+}
